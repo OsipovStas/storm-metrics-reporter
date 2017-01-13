@@ -6,7 +6,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 
 import java.util.Arrays;
 

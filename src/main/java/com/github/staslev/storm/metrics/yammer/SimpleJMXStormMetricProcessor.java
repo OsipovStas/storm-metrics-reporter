@@ -1,6 +1,6 @@
 package com.github.staslev.storm.metrics.yammer;
 
-import backtype.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.metric.api.IMetricsConsumer;
 import com.github.staslev.storm.metrics.Metric;
 import com.github.staslev.storm.metrics.StormMetricProcessor;
 import com.yammer.metrics.core.MetricName;

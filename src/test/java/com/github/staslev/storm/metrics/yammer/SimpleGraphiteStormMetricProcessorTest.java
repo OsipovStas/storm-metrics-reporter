@@ -1,6 +1,6 @@
 package com.github.staslev.storm.metrics.yammer;
 
-import backtype.storm.Config;
+import org.apache.storm.Config;
 import com.github.staslev.storm.metrics.MetricReporterConfig;
 import org.junit.Test;
 

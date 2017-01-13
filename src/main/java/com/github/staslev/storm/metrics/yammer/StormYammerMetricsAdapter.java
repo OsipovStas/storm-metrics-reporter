@@ -1,6 +1,6 @@
 package com.github.staslev.storm.metrics.yammer;
 
-import backtype.storm.task.TopologyContext;
+import org.apache.storm.task.TopologyContext;
 import com.yammer.metrics.core.*;
 
 import java.util.Map;

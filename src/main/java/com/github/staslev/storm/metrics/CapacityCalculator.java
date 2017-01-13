@@ -1,6 +1,6 @@
 package com.github.staslev.storm.metrics;
 
-import backtype.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.metric.api.IMetricsConsumer;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;

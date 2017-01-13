@@ -1,6 +1,6 @@
 package com.github.staslev.storm.metrics;
 
-import backtype.storm.Config;
+import org.apache.storm.Config;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
