@@ -62,8 +62,9 @@ public class SimpleStormMetricProcessor implements StormMetricProcessor {
 
     @Override
     public void process(final Metric metric, final IMetricsConsumer.TaskInfo taskInfo) {
+        LOG.info("Process metric1");
         final MetricName metricName = name(metric, taskInfo);
-        LOG.debug("Process metric " + metricName);
+        LOG.info("Process metric2" + metricName);
         try {
             createOrUpdateGauge(metric, metricName);
         } catch (final Exception e) {
