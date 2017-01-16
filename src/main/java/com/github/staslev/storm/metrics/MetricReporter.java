@@ -1,10 +1,11 @@
 package com.github.staslev.storm.metrics;
 
-import org.apache.storm.Config;
+import com.google.common.collect.*;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.task.IErrorReporter;
 import org.apache.storm.task.TopologyContext;
-import com.google.common.collect.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -21,6 +22,8 @@ import java.util.Map;
  * <br/><br/><url>Inspired by <url>https://github.com/endgameinc/storm-metrics-statsd</url>
  */
 public class MetricReporter implements IMetricsConsumer {
+
+  public static final Logger LOG = LoggerFactory.getLogger(MetricReporter.class);
 
   private MetricMatcher allowedMetrics;
   private StormMetricProcessor stormMetricProcessor;
@@ -94,7 +97,7 @@ public class MetricReporter implements IMetricsConsumer {
     final Iterable<Metric> providedMetrics = Iterables.concat(component2metrics.values());
     final Iterable<Metric> allMetrics = Iterables.concat(providedMetrics, capacityMetrics);
 
-    for (final Metric metric : FluentIterable.from(allMetrics).filter(allowedMetrics).toList()) {
+    for (final Metric metric : FluentIterable.from(allMetrics).toList()) {
       stormMetricProcessor.process(metric, taskInfo);
     }
   }

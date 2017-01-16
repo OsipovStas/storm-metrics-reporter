@@ -1,10 +1,10 @@
 package com.github.staslev.storm.metrics.yammer;
 
-import org.apache.storm.Config;
-import org.apache.storm.metric.api.IMetricsConsumer;
 import com.github.staslev.storm.metrics.Metric;
 import com.github.staslev.storm.metrics.StormMetricProcessor;
 import com.yammer.metrics.core.MetricName;
+import org.apache.storm.Config;
+import org.apache.storm.metric.api.IMetricsConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,8 +62,8 @@ public class SimpleStormMetricProcessor implements StormMetricProcessor {
 
     @Override
     public void process(final Metric metric, final IMetricsConsumer.TaskInfo taskInfo) {
-
         final MetricName metricName = name(metric, taskInfo);
+        LOG.debug("Process metric " + metricName);
         try {
             createOrUpdateGauge(metric, metricName);
         } catch (final Exception e) {
