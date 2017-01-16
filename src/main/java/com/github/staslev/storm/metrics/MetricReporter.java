@@ -41,7 +41,7 @@ public class MetricReporter implements IMetricsConsumer {
         return Collections.singletonMap(component, metrics);
     }
 
-    private List<Metric> extractMetrics(final DataPoint dataPoint, final String component) {
+    List<Metric> extractMetrics(final DataPoint dataPoint, final String component) {
 
         List<Metric> metrics = Lists.newArrayList();
 
@@ -61,6 +61,12 @@ public class MetricReporter implements IMetricsConsumer {
                     metrics.addAll(extractMetrics(new DataPoint(Metric.joinNameFragments(dataPoint.name, subName.toString()), subValue),
                             component));
                 }
+            }
+        } else if (dataPoint.value instanceof List) {
+            @SuppressWarnings("rawtypes")
+            List value = (List) dataPoint.value;
+            if(!value.isEmpty()) {
+                metrics.addAll(extractMetrics(new DataPoint(dataPoint.name, value.get(0)), component));
             }
         }
 
