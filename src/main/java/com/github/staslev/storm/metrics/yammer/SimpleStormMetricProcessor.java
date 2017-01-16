@@ -54,7 +54,7 @@ public class SimpleStormMetricProcessor implements StormMetricProcessor {
     @Override
     public MetricName name(final Metric metric, final IMetricsConsumer.TaskInfo taskInfo) {
         return new MetricName(Metric.joinNameFragments(taskInfo.srcWorkerHost,
-                        taskInfo.srcWorkerPort,
+                        String.valueOf(taskInfo.srcWorkerPort),
                         metric.getComponent()),
                         Integer.toString(taskInfo.srcTaskId),
                         metric.getOperation());

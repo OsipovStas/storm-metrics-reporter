@@ -1,6 +1,6 @@
 package com.github.staslev.storm.metrics;
 
-import com.google.common.collect.*;
+import com.google.common.collect.Lists;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.task.IErrorReporter;
 import org.apache.storm.task.TopologyContext;
@@ -8,9 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.LinkedList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A metric consumer implementation that reports storm metrics to Graphite.
@@ -32,22 +33,12 @@ public class MetricReporter implements IMetricsConsumer {
         return ((Number) value).doubleValue();
     }
 
-    private Map<String, List<Metric>> toMetricsByComponent(final Collection<DataPoint> dataPoints,
-                                                           final TaskInfo taskInfo) {
+    private Map<String, List<Metric>> toMetricsByComponent(Collection<DataPoint> dataPoints, TaskInfo taskInfo) {
 
-        final Map<String, List<Metric>> component2metrics = Maps.newHashMap();
+        String component = Metric.cleanNameFragment(taskInfo.srcComponentId);
+        List<Metric> metrics = dataPoints.stream().flatMap(p -> extractMetrics(p, component).stream()).collect(Collectors.toList());
 
-        for (final DataPoint dataPoint : dataPoints) {
-            final String component = Metric.cleanNameFragment(taskInfo.srcComponentId);
-
-            if (!component2metrics.containsKey(component)) {
-                component2metrics.put(component, new LinkedList<Metric>());
-            }
-
-            component2metrics.get(component).addAll(extractMetrics(dataPoint, component));
-        }
-
-        return component2metrics;
+        return Collections.singletonMap(component, metrics);
     }
 
     private List<Metric> extractMetrics(final DataPoint dataPoint, final String component) {
@@ -67,7 +58,7 @@ public class MetricReporter implements IMetricsConsumer {
                                     Metric.cleanNameFragment(subName.toString())),
                             value(subValue)));
                 } else if (subValue instanceof Map) {
-                    metrics.addAll(extractMetrics(new DataPoint(Metric.joinNameFragments(dataPoint.name, subName), subValue),
+                    metrics.addAll(extractMetrics(new DataPoint(Metric.joinNameFragments(dataPoint.name, subName.toString()), subValue),
                             component));
                 }
             }
@@ -90,19 +81,17 @@ public class MetricReporter implements IMetricsConsumer {
 
     @Override
     public void handleDataPoints(final TaskInfo taskInfo, final Collection<DataPoint> dataPoints) {
-        LOG.info("Handle data points:  " + dataPoints.toString());
-        final Map<String, List<Metric>> component2metrics = toMetricsByComponent(dataPoints, taskInfo);
-        final ImmutableList<Metric> capacityMetrics = CapacityCalculator.calculateCapacityMetrics(component2metrics,
-                taskInfo);
-        final Iterable<Metric> providedMetrics = Iterables.concat(component2metrics.values());
-        final Iterable<Metric> allMetrics = Iterables.concat(providedMetrics, capacityMetrics);
+        Map<String, List<Metric>> component2metrics = toMetricsByComponent(dataPoints, taskInfo);
+//        final List<Metric> capacityMetrics = CapacityCalculator.calculateCapacityMetrics(component2metrics,
+//                taskInfo);
+        LOG.info("Parsed metrics " + component2metrics);
+//        final Iterable<Metric> providedMetrics = Iterables.concat(component2metrics.values());
+//        final Iterable<Metric> allMetrics = Iterables.concat(providedMetrics, capacityMetrics);
 
-        ImmutableList<Metric> metrics = FluentIterable.from(allMetrics).toList();
-        LOG.info("Procees metrics amount " + metrics.size());
-        LOG.debug("handling debug");
-        for (final Metric metric : metrics) {
-            stormMetricProcessor.process(metric, taskInfo);
-        }
+//        ImmutableList<Metric> metrics = FluentIterable.from(allMetrics).toList();
+//        for (final Metric metric : metrics) {
+//            stormMetricProcessor.process(metric, taskInfo);
+//        }
     }
 
     @Override

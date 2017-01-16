@@ -1,110 +1,90 @@
 package com.github.staslev.storm.metrics;
 
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
 import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Metric {
 
-  public static class Option {
+    private static final String NAME_FRAGMENT_SEPARATOR = ".";
 
-    public static final Predicate<Optional<Metric>> isPresent =
-            new Predicate<Optional<Metric>>() {
-              @Override
-              public boolean apply(final Optional<Metric> metricOption) {
-                return metricOption.isPresent();
-              }
-            };
+    private final String component;
+    private final String operation;
+    private final double value;
 
-    public static final Function<Optional<Metric>, Metric> getValue =
-            new Function<Optional<Metric>, Metric>() {
-              @Override
-              public Metric apply(final Optional<Metric> metricOption) {
-                return metricOption.get();
-              }
-            };
-
-  }
-
-  private static Predicate<Object> nonBlank = new Predicate<Object>() {
-    @Override
-    public boolean apply(final Object name) {
-      return StringUtils.isNotBlank(name.toString());
+    public Metric(final String component, final String operation, final double value) {
+        this.component = component;
+        this.operation = operation;
+        this.value = value;
     }
-  };
 
-  public static final String NAME_FRAGMENT_SEPARATOR = ".";
+    /**
+     * Returns the operation portion of the metric after a given string literal.
+     *
+     * @param after the string literal to skip.
+     * @return the operation portion of the metric after a given string literal. If the provided string literal is not
+     * present in the operation string, the operation string is returned as is.
+     */
+    public String getOperationAfterString(String after) {
+        return !getOperation().contains(after) ?
+                getOperation() :
+                getOperation().substring(getOperation().indexOf(after) + after.length() + 1);
+    }
 
-  private final String component;
-  private final String operation;
-  private final double value;
+    /**
+     * Joins multiple metric name strings using a Graphite style dot separator.
+     *
+     * @param metricNameFragments The metric metricNameFragments.
+     * @return A joined metric name string.
+     */
+    public static String joinNameFragments(String... metricNameFragments) {
 
-  public Metric(final String component, final String operation, final double value) {
-    this.component = component;
-    this.operation = operation;
-    this.value = value;
-  }
+        final List<String> nonBlankNameFragments =
+                Arrays.stream(metricNameFragments)
+                        .filter(StringUtils::isNotBlank)
+                        .collect(Collectors.toList());
 
-  /**
-   * Returns the operation portion of the metric after a given string literal.
-   *
-   * @param after the string literal to skip.
-   * @return the operation portion of the metric after a given string literal. If the provided string literal is not
-   * present in the operation string, the operation string is returned as is.
-   */
-  public String getOperationAfterString(String after) {
-    return !getOperation().contains(after) ?
-           getOperation() :
-           getOperation().substring(getOperation().indexOf(after) + after.length() + 1);
-  }
+        return Joiner.on(NAME_FRAGMENT_SEPARATOR).join(nonBlankNameFragments);
+    }
 
-  /**
-   * Joins multiple metric name strings using a Graphite style dot separator.
-   *
-   * @param metricNameFragments The metric metricNameFragments.
-   * @return A joined metric name string.
-   */
-  public static String joinNameFragments(Object... metricNameFragments) {
+    /**
+     * Removes restricted characters from a metric name fragment.
+     *
+     * @param metricNameFragment A metric name fragment string.
+     * @return A "clean" metric name fragment string, with restricted characters replaced.
+     */
+    static String cleanNameFragment(final String metricNameFragment) {
+        return metricNameFragment
+                .replace("__", "")
+                .replace('/', '.')
+                .replace(':', '_');
+    }
 
-    final ImmutableList<Object> nonBlankNameFragments = FluentIterable.from(Arrays.asList(metricNameFragments))
-                                                                      .filter(nonBlank)
-                                                                      .toList();
+    String getMetricName() {
+        return joinNameFragments(getComponent(), getOperation());
+    }
 
-    return Joiner.on(NAME_FRAGMENT_SEPARATOR).join(nonBlankNameFragments);
-  }
+    public double getValue() {
+        return value;
+    }
 
-  /**
-   * Removes restricted characters from a metric name fragment.
-   *
-   * @param metricNameFragment A metric name fragment string.
-   * @return A "clean" metric name fragment string, with restricted characters replaced.
-   */
-  public static String cleanNameFragment(final String metricNameFragment) {
-    return metricNameFragment
-            .replace("__", "")
-            .replace('/', '.')
-            .replace(':', '_');
-  }
+    public String getComponent() {
+        return component;
+    }
 
-  public String getMetricName() {
-    return joinNameFragments(getComponent(), getOperation());
-  }
+    public String getOperation() {
+        return operation;
+    }
 
-  public double getValue() {
-    return value;
-  }
-
-  public String getComponent() {
-    return component;
-  }
-
-  public String getOperation() {
-    return operation;
-  }
+    @Override
+    public String toString() {
+        return "Metric{" +
+                "component='" + component + '\'' +
+                ", operation='" + operation + '\'' +
+                ", value=" + value +
+                '}';
+    }
 }
