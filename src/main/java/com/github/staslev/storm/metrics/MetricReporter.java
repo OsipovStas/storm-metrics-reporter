@@ -23,89 +23,89 @@ import java.util.Map;
  */
 public class MetricReporter implements IMetricsConsumer {
 
-  public static final Logger LOG = LoggerFactory.getLogger(MetricReporter.class);
+    public static final Logger LOG = LoggerFactory.getLogger(MetricReporter.class);
 
-  private MetricMatcher allowedMetrics;
-  private StormMetricProcessor stormMetricProcessor;
+    private MetricMatcher allowedMetrics;
+    private StormMetricProcessor stormMetricProcessor;
 
-  private double value(final Object value) {
-    return ((Number) value).doubleValue();
-  }
-
-  private Map<String, List<Metric>> toMetricsByComponent(final Collection<DataPoint> dataPoints,
-                                                         final TaskInfo taskInfo) {
-
-    final Map<String, List<Metric>> component2metrics = Maps.newHashMap();
-
-    for (final DataPoint dataPoint : dataPoints) {
-      final String component = Metric.cleanNameFragment(taskInfo.srcComponentId);
-
-      if (!component2metrics.containsKey(component)) {
-        component2metrics.put(component, new LinkedList<Metric>());
-      }
-
-      component2metrics.get(component).addAll(extractMetrics(dataPoint, component));
+    private double value(final Object value) {
+        return ((Number) value).doubleValue();
     }
 
-    return component2metrics;
-  }
+    private Map<String, List<Metric>> toMetricsByComponent(final Collection<DataPoint> dataPoints,
+                                                           final TaskInfo taskInfo) {
 
-  private List<Metric> extractMetrics(final DataPoint dataPoint, final String component) {
+        final Map<String, List<Metric>> component2metrics = Maps.newHashMap();
 
-    List<Metric> metrics = Lists.newArrayList();
+        for (final DataPoint dataPoint : dataPoints) {
+            final String component = Metric.cleanNameFragment(taskInfo.srcComponentId);
 
-    if (dataPoint.value instanceof Number) {
-      metrics.add(new Metric(component, Metric.cleanNameFragment(dataPoint.name), value(dataPoint.value)));
-    } else if (dataPoint.value instanceof Map) {
-      @SuppressWarnings("rawtypes")
-      final Map map = (Map) dataPoint.value;
-      for (final Object subName : map.keySet()) {
-        final Object subValue = map.get(subName);
-        if (subValue instanceof Number) {
-          metrics.add(new Metric(component,
-                                 Metric.joinNameFragments(Metric.cleanNameFragment(dataPoint.name),
-                                                          Metric.cleanNameFragment(subName.toString())),
-                                 value(subValue)));
-        } else if (subValue instanceof Map) {
-          metrics.addAll(extractMetrics(new DataPoint(Metric.joinNameFragments(dataPoint.name, subName), subValue),
-                                        component));
+            if (!component2metrics.containsKey(component)) {
+                component2metrics.put(component, new LinkedList<Metric>());
+            }
+
+            component2metrics.get(component).addAll(extractMetrics(dataPoint, component));
         }
-      }
+
+        return component2metrics;
     }
 
-    return metrics;
-  }
+    private List<Metric> extractMetrics(final DataPoint dataPoint, final String component) {
 
-  @Override
-  public void prepare(final Map stormConf,
-                      final Object registrationArgument,
-                      final TopologyContext context,
-                      final IErrorReporter errorReporter) {
+        List<Metric> metrics = Lists.newArrayList();
 
-    @SuppressWarnings("unchecked")
-    final MetricReporterConfig config = MetricReporterConfig.from((List<String>) registrationArgument);
-    allowedMetrics = new MetricMatcher(config.getAllowedMetricNames());
-    stormMetricProcessor = config.getStormMetricProcessor(stormConf);
-  }
+        if (dataPoint.value instanceof Number) {
+            metrics.add(new Metric(component, Metric.cleanNameFragment(dataPoint.name), value(dataPoint.value)));
+        } else if (dataPoint.value instanceof Map) {
+            @SuppressWarnings("rawtypes")
+            final Map map = (Map) dataPoint.value;
+            for (final Object subName : map.keySet()) {
+                final Object subValue = map.get(subName);
+                if (subValue instanceof Number) {
+                    metrics.add(new Metric(component,
+                            Metric.joinNameFragments(Metric.cleanNameFragment(dataPoint.name),
+                                    Metric.cleanNameFragment(subName.toString())),
+                            value(subValue)));
+                } else if (subValue instanceof Map) {
+                    metrics.addAll(extractMetrics(new DataPoint(Metric.joinNameFragments(dataPoint.name, subName), subValue),
+                            component));
+                }
+            }
+        }
 
-  @Override
-  public void handleDataPoints(final TaskInfo taskInfo, final Collection<DataPoint> dataPoints) {
-    LOG.info("Handle data points in metric reporter");
-    final Map<String, List<Metric>> component2metrics = toMetricsByComponent(dataPoints, taskInfo);
-    final ImmutableList<Metric> capacityMetrics = CapacityCalculator.calculateCapacityMetrics(component2metrics,
-                                                                                              taskInfo);
-    final Iterable<Metric> providedMetrics = Iterables.concat(component2metrics.values());
-    final Iterable<Metric> allMetrics = Iterables.concat(providedMetrics, capacityMetrics);
-
-      ImmutableList<Metric> metrics = FluentIterable.from(allMetrics).toList();
-      LOG.info("Procees metrics amount " + metrics.size());
-      LOG.info("handling debug");
-      for (final Metric metric : metrics) {
-      stormMetricProcessor.process(metric, taskInfo);
+        return metrics;
     }
-  }
 
-  @Override
-  public void cleanup() {
-  }
+    @Override
+    public void prepare(final Map stormConf,
+                        final Object registrationArgument,
+                        final TopologyContext context,
+                        final IErrorReporter errorReporter) {
+
+        @SuppressWarnings("unchecked")
+        final MetricReporterConfig config = MetricReporterConfig.from((List<String>) registrationArgument);
+        allowedMetrics = new MetricMatcher(config.getAllowedMetricNames());
+        stormMetricProcessor = config.getStormMetricProcessor(stormConf);
+    }
+
+    @Override
+    public void handleDataPoints(final TaskInfo taskInfo, final Collection<DataPoint> dataPoints) {
+        LOG.info("Handle data points in metric reporter");
+        final Map<String, List<Metric>> component2metrics = toMetricsByComponent(dataPoints, taskInfo);
+        final ImmutableList<Metric> capacityMetrics = CapacityCalculator.calculateCapacityMetrics(component2metrics,
+                taskInfo);
+        final Iterable<Metric> providedMetrics = Iterables.concat(component2metrics.values());
+        final Iterable<Metric> allMetrics = Iterables.concat(providedMetrics, capacityMetrics);
+
+        ImmutableList<Metric> metrics = FluentIterable.from(allMetrics).toList();
+        LOG.info("Procees metrics amount " + metrics.size());
+        LOG.debug("handling debug");
+        for (final Metric metric : metrics) {
+            stormMetricProcessor.process(metric, taskInfo);
+        }
+    }
+
+    @Override
+    public void cleanup() {
+    }
 }
