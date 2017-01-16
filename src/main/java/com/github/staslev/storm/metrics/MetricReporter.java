@@ -97,7 +97,10 @@ public class MetricReporter implements IMetricsConsumer {
     final Iterable<Metric> providedMetrics = Iterables.concat(component2metrics.values());
     final Iterable<Metric> allMetrics = Iterables.concat(providedMetrics, capacityMetrics);
 
-    for (final Metric metric : FluentIterable.from(allMetrics).toList()) {
+      ImmutableList<Metric> metrics = FluentIterable.from(allMetrics).toList();
+      LOG.info("Procees metrics amount " + metrics.size());
+      LOG.info("handling debug");
+      for (final Metric metric : metrics) {
       stormMetricProcessor.process(metric, taskInfo);
     }
   }
