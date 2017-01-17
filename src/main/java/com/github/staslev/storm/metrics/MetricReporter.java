@@ -87,10 +87,11 @@ public class MetricReporter implements IMetricsConsumer {
 
     @Override
     public void handleDataPoints(final TaskInfo taskInfo, final Collection<DataPoint> dataPoints) {
+        LOG.info(String.format("Getting data points - %s  ### %s", taskInfoToString(taskInfo), dataPoints));
         Map<String, List<Metric>> component2metrics = toMetricsByComponent(dataPoints, taskInfo);
 //        final List<Metric> capacityMetrics = CapacityCalculator.calculateCapacityMetrics(component2metrics,
 //                taskInfo);
-        LOG.info("Parsed metrics " + component2metrics);
+        LOG.debug("Parsed metrics " + component2metrics);
 //        final Iterable<Metric> providedMetrics = Iterables.concat(component2metrics.values());
 //        final Iterable<Metric> allMetrics = Iterables.concat(providedMetrics, capacityMetrics);
 
@@ -103,4 +104,17 @@ public class MetricReporter implements IMetricsConsumer {
     @Override
     public void cleanup() {
     }
+
+    public static String taskInfoToString(TaskInfo info) {
+        final StringBuilder sb = new StringBuilder("TaskInfo{");
+        sb.append("srcWorkerHost='").append(info.srcWorkerHost).append('\'');
+        sb.append(", srcWorkerPort=").append(info.srcWorkerPort);
+        sb.append(", srcComponentId='").append(info.srcComponentId).append('\'');
+        sb.append(", srcTaskId=").append(info.srcTaskId);
+        sb.append(", timestamp=").append(info.timestamp);
+        sb.append(", updateIntervalSecs=").append(info.updateIntervalSecs);
+        sb.append('}');
+        return sb.toString();
+    }
+
 }
