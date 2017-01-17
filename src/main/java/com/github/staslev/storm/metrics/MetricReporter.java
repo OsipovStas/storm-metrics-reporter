@@ -34,10 +34,8 @@ public class MetricReporter implements IMetricsConsumer {
     }
 
     private Map<String, List<Metric>> toMetricsByComponent(Collection<DataPoint> dataPoints, TaskInfo taskInfo) {
-
         String component = Metric.cleanNameFragment(taskInfo.srcComponentId);
         List<Metric> metrics = dataPoints.stream().flatMap(p -> extractMetrics(p, component).stream()).collect(Collectors.toList());
-
         return Collections.singletonMap(component, metrics);
     }
 
@@ -86,19 +84,19 @@ public class MetricReporter implements IMetricsConsumer {
     }
 
     @Override
-    public void handleDataPoints(final TaskInfo taskInfo, final Collection<DataPoint> dataPoints) {
-        LOG.info(String.format("Getting data points - %s  ### %s", taskInfoToString(taskInfo), dataPoints));
+    public void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
+        if(LOG.isDebugEnabled()) {
+            LOG.debug(String.format("Getting data points - %s  ### %s", taskInfoToString(taskInfo), dataPoints));
+        }
         Map<String, List<Metric>> component2metrics = toMetricsByComponent(dataPoints, taskInfo);
-//        final List<Metric> capacityMetrics = CapacityCalculator.calculateCapacityMetrics(component2metrics,
-//                taskInfo);
-        LOG.debug("Parsed metrics " + component2metrics);
-//        final Iterable<Metric> providedMetrics = Iterables.concat(component2metrics.values());
-//        final Iterable<Metric> allMetrics = Iterables.concat(providedMetrics, capacityMetrics);
-
-//        ImmutableList<Metric> metrics = FluentIterable.from(allMetrics).toList();
-//        for (final Metric metric : metrics) {
-//            stormMetricProcessor.process(metric, taskInfo);
-//        }
+        if(LOG.isDebugEnabled()) {
+            LOG.debug("Parsed metrics " + component2metrics);
+        }
+        component2metrics
+                .values()
+                .stream()
+                .flatMap(Collection::stream)
+                .forEach(m -> stormMetricProcessor.process(m , taskInfo));
     }
 
     @Override

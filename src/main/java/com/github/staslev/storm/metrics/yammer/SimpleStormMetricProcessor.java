@@ -47,6 +47,9 @@ public class SimpleStormMetricProcessor implements StormMetricProcessor {
     private SettableGauge<Double> createOrUpdateGauge(final Metric metric, final MetricName metricName) {
         final SettableGauge<Double> settableGauge =
                 (SettableGauge<Double>) METRICS_REGISTRY.newGauge(metricName, new SettableGauge(metric.getValue()));
+        if(LOG.isDebugEnabled()) {
+            LOG.debug(String.format("Update metric - %s - Value - %s", metricName, metric.getValue()));
+        }
         settableGauge.setValue(metric.getValue());
         return settableGauge;
     }
@@ -62,9 +65,7 @@ public class SimpleStormMetricProcessor implements StormMetricProcessor {
 
     @Override
     public void process(final Metric metric, final IMetricsConsumer.TaskInfo taskInfo) {
-        LOG.info("Process metric1");
         final MetricName metricName = name(metric, taskInfo);
-        LOG.info("Process metric2" + metricName);
         try {
             createOrUpdateGauge(metric, metricName);
         } catch (final Exception e) {
